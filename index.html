@@ -22,7 +22,7 @@
     <div id="messages"></div>
     <div id="inputArea">
       <input id="userInput" type="text" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
   </div>
 
@@ -57,6 +57,14 @@
     document.getElementById("messages").appendChild(msgDiv);
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
   }
+
+  // 🚀 Send on Enter
+  document.getElementById("userInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // prevent newline
+      sendMessage();
+    }
+  });
 </script>
 
 </body>
