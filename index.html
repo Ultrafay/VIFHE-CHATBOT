@@ -1,71 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>VIFHE Chatbot</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VIFHE Bot • Learn with AI</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f7f7f7; }
-    #chatbox { max-width: 600px; margin: 40px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    #messages { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; background: #fafafa; }
-    .msg { margin: 5px 0; padding: 8px 12px; border-radius: 8px; }
-    .user { background: #007bff; color: white; text-align: right; }
-    .bot { background: #eaeaea; color: black; text-align: left; }
-    #inputArea { display: flex; }
-    #userInput { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    button { margin-left: 10px; padding: 10px 15px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
+    /* ===== Theme ===== */
+    :root {
+      --bg: #0b1020;               /* deep navy */
+      --panel: #0f162e;            /* card dark */
+      --panel-2: #151e3a;          /* input dark */
+      --accent: #6ee7ff;           /* cyan */
+      --accent-2: #a78bfa;         /* violet */
+      --text: #eef2ff;             /* near white */
+      --muted: #9aa4c7;            /* slate */
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: radial-gradient(1200px 800px at 10% -10%, rgba(103, 232, 249, .15), transparent 50%),
+                  radial-gradient(900px 700px at 110% 10%, rgba(167, 139, 250, .15), transparent 40%),
+                  var(--bg);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100vh;
+    }
+
+    /* ===== Header ===== */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: saturate(140%) blur(10px);
+      background: linear-gradient(90deg, rgba(20,30,60,.7), rgba(15,22,46,.6));
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .container { width: min(1050px, 92vw); margin: 0 auto; }
+    .brand {
+      display: flex; align-items: center; gap: 14px; padding: 18px 0;
+    }
+    .logo {
+      width: 42px; height: 42px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: var(--shadow);
+      font-size: 24px;
+    }
+    .title { font-weight: 800; letter-spacing:.2px; margin:0; }
+    .subtitle { color: var(--muted); margin:2px 0 0 0; font-size: 14px; }
+
+    /* ===== Chat Panel ===== */
+    .chat {
+      display: grid; grid-template-rows: 1fr auto; gap: 14px;
+      width: min(1050px, 92vw); margin: 22px auto 28px; padding: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* ===== Messages ===== */
+    #messages {
+      height: min(62vh, 650px);
+      overflow-y: auto; padding: 10px; scroll-behavior: smooth;
+    }
+    .msg {
+      max-width: 78%; padding: 12px 14px; border-radius: 14px;
+      line-height: 1.45; margin: 10px 0; word-wrap: break-word;
+      animation: pop .15s ease-out;
+    }
+    .msg.user { margin-left: auto; background: linear-gradient(135deg, rgba(110,231,255,.25), rgba(167,139,250,.28)); border: 1px solid rgba(255,255,255,.12); }
+    .msg.bot { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+    .meta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .thinking { display:inline-flex; gap:4px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); opacity:.6; animation: pulse 1.2s infinite; }
+    .dot:nth-child(2){ animation-delay: .15s; } .dot:nth-child(3){ animation-delay: .3s; }
+
+    @keyframes pop { from { transform: scale(.98); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+    @keyframes pulse { 0%, 80%, 100% { opacity:.2; transform: translateY(0) } 40% { opacity:1; transform: translateY(-2px) } }
+
+    /* ===== Input Bar ===== */
+    .inputBar {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;
+      background: var(--panel-2); border: 1px solid rgba(255,255,255,.06);
+      padding: 10px; border-radius: 14px;
+    }
+    textarea {
+      width: 100%; resize: none; min-height: 44px; max-height: 140px;
+      background: transparent; border: none; outline: none; color: var(--text);
+      font: inherit; line-height: 1.4; padding: 10px 12px;
+    }
+    .actions { display: flex; gap: 8px; }
+    button {
+      appearance: none; border: none; cursor: pointer; font-weight: 700;
+      border-radius: 12px; padding: 12px 16px; color: #0b1020;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 8px 24px rgba(103, 232, 249, .18);
+      transition: transform .08s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    button:hover { transform: translateY(-1px); }
+
+    /* ===== Footer ===== */
+    footer { color: var(--muted); font-size: 12px; text-align: center; padding: 10px 0 24px; }
+    a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
-  <div id="chatbox">
-    <h2>🤖 VIFHE Chatbot</h2>
-    <div id="messages"></div>
-    <div id="inputArea">
-      <input id="userInput" type="text" placeholder="Type your message...">
-      <button id="sendBtn" onclick="sendMessage()">Send</button>
+  <!-- Header / Branding -->
+  <header>
+    <div class="container brand">
+      <div class="logo" aria-hidden>🎓</div>
+      <div>
+        <h1 class="title">VIFHE Bot</h1>
+        <p class="subtitle">Your study companion • Ask questions, get clear answers</p>
+      </div>
     </div>
-  </div>
+  </header>
 
- <script>
-  async function sendMessage() {
-    const input = document.getElementById("userInput");
-    const text = input.value.trim();
-    if (!text) return;
+  <!-- Chat Card -->
+  <main class="chat" aria-live="polite">
+    <div id="messages" role="log" aria-label="Chat messages"></div>
 
-    addMessage(text, "user");
-    input.value = "";
+    <div class="inputBar">
+      <textarea id="userInput" placeholder="Type your question… (Shift + Enter for new line)"></textarea>
+      <div class="actions">
+        <button id="sendBtn" onclick="sendMessage()">Send ▸</button>
+      </div>
+    </div>
+  </main>
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
-      });
+  <footer>
+    Tip: Press <strong>Enter</strong> to send • <strong>Shift + Enter</strong> for a new line
+  </footer>
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Bad response");
-      addMessage(data.reply, "bot");
-    } catch (err) {
-      addMessage("⚠️ Error: " + err.message, "bot");
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Send on Enter (Shift+Enter = newline)
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function addMessage(text, who = 'bot') {
+      const msg = document.createElement('div');
+      msg.className = `msg ${who}`;
+      msg.textContent = text;
+      messagesEl.appendChild(msg);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return msg;
     }
-  }
 
-  function addMessage(text, sender) {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "msg " + sender;
-    msgDiv.innerText = text;
-    document.getElementById("messages").appendChild(msgDiv);
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-  }
-
-  // 🚀 Send on Enter
-  document.getElementById("userInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault(); // prevent newline
-      sendMessage();
+    function addThinking() {
+      const shell = document.createElement('div');
+      shell.className = 'msg bot';
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = '<span>VIFHE Bot is thinking</span> <span class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+      shell.appendChild(meta);
+      messagesEl.appendChild(shell);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return shell;
     }
-  });
-</script>
 
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      // optimistic UI
+      addMessage(text, 'user');
+      inputEl.value = '';
+      inputEl.style.height = '44px';
+      sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+
+      const thinking = addThinking();
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        thinking.remove();
+
+        if (!res.ok) {
+          addMessage(`⚠️ Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data, null, 2)}`);
+        } else {
+          addMessage(data.reply || '(no reply)');
+        }
+      } catch (err) {
+        thinking.remove();
+        addMessage('⚠️ Network error. Please try again.');
+      } finally {
+        sendBtn.disabled = false; sendBtn.textContent = 'Send ▸';
+      }
+    }
+
+    // Auto-grow textarea
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+    });
+
+    // Welcome message
+    addMessage('Hi! I\'m VIFHE Bot. Ask me anything about your studies, exams, or concepts.');
+  </script>
 </body>
 </html>
