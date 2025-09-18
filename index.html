@@ -26,43 +26,38 @@
     </div>
   </div>
 
-  <script>
-    async function sendMessage() {
-      const input = document.getElementById("userInput");
-      const text = input.value;
-      if (!text) return;
+ <script>
+  async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+    if (!text) return;
 
-      addMessage(text, "user");
-      input.value = "";
+    addMessage(text, "user");
+    input.value = "";
 
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer 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"
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: text }]
-          })
-        });
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
 
-        const data = await response.json();
-        const reply = data.choices[0].message.content;
-        addMessage(reply, "bot");
-      } catch (err) {
-        addMessage("⚠️ Error connecting to OpenAI API.", "bot");
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Bad response");
+      addMessage(data.reply, "bot");
+    } catch (err) {
+      addMessage("⚠️ Error: " + err.message, "bot");
     }
+  }
 
-    function addMessage(text, sender) {
-      const msgDiv = document.createElement("div");
-      msgDiv.className = "msg " + sender;
-      msgDiv.innerText = text;
-      document.getElementById("messages").appendChild(msgDiv);
-      document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-    }
-  </script>
+  function addMessage(text, sender) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "msg " + sender;
+    msgDiv.innerText = text;
+    document.getElementById("messages").appendChild(msgDiv);
+    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+  }
+</script>
+
 </body>
 </html>
