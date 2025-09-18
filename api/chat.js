@@ -9,15 +9,12 @@ export default async function handler(req, res) {
     const { message } = body || {};
     if (!message) return res.status(400).json({ error: 'Missing message' });
 
+    // Headers: must include Project ID when using sk-proj- keys
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'OpenAI-Project': process.env.OPENAI_PROJECT_ID,   // 👈 required
     };
-
-    // 👇 Add project header if available
-    if (process.env.OPENAI_PROJECT_ID) {
-      headers['OpenAI-Project'] = process.env.OPENAI_PROJECT_ID;
-    }
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -40,7 +37,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Helper: safely parse body
 async function readBody(req) {
   if (req.body) return req.body;
   if (typeof req.json === 'function') {
