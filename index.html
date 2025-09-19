@@ -140,33 +140,63 @@
     Tip: Press <strong>Enter</strong> to send • <strong>Shift + Enter</strong> for a new line
   </footer>
 
- <script>
+  <script>
   const messagesEl = document.getElementById('messages');
   const inputEl = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
 
-  // keep a thread across turns & refreshes
-  const THREAD_KEY = 'vifhe:thread';
-  let threadId = localStorage.getItem(THREAD_KEY) || null;
+  // Keep conversation context across turns
+  let prevId = null;
 
-  // ... keep your existing helpers ...
+  // Send on Enter (Shift+Enter = newline)
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function addMessage(text, who = 'bot') {
+    const msg = document.createElement('div');
+    msg.className = `msg ${who}`;
+    msg.textContent = text;
+    messagesEl.appendChild(msg);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return msg;
+  }
+
+  function addThinking() {
+    const shell = document.createElement('div');
+    shell.className = 'msg bot';
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = '<span>VIFHE Bot is thinking</span> <span class="thinking"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+    shell.appendChild(meta);
+    messagesEl.appendChild(shell);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return shell;
+  }
 
   async function sendMessage() {
     const text = inputEl.value.trim();
     if (!text) return;
 
+    // optimistic UI
     addMessage(text, 'user');
     inputEl.value = '';
     inputEl.style.height = '44px';
     sendBtn.disabled = true; sendBtn.textContent = 'Sending…';
+
     const thinking = addThinking();
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, threadId }) // 👈 send threadId if we have it
+        // send prevId so the server can chain with previous_response_id
+        body: JSON.stringify({ message: text, prevId })
       });
+
       const data = await res.json();
       thinking.remove();
 
@@ -174,19 +204,24 @@
         addMessage(`⚠️ Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data, null, 2)}`);
       } else {
         addMessage(data.reply || '(no reply)');
-        if (data.threadId && data.threadId !== threadId) {
-          threadId = data.threadId;
-          localStorage.setItem(THREAD_KEY, threadId);
-        }
+        if (data.responseId) prevId = data.responseId; // keep conversation state
       }
-    } catch {
+    } catch (err) {
       thinking.remove();
       addMessage('⚠️ Network error. Please try again.');
     } finally {
       sendBtn.disabled = false; sendBtn.textContent = 'Send ▸';
     }
   }
-</script>
 
+  // Auto-grow textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+  });
+
+  // Welcome message
+  addMessage('Hi! I\'m VIFHE Bot. Ask me anything about your studies, exams, or concepts.');
+</script>
 </body>
 </html>
