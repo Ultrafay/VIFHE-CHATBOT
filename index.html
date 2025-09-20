@@ -20,6 +20,8 @@
       --radius: 16px;
     }
 
+    
+
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
@@ -157,16 +159,27 @@
     const inputEl = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
 
-    // Keep conversation context across turns (Responses flow)
-    let prevId = null;
+ // ... existing code ...
+let threadId = null; // Change this from prevId
 
-    // Send on Enter (Shift+Enter = newline)
-    inputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
+// ... existing code ...
+
+// In the sendMessage function, update the fetch call:
+const res = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message: text, threadId }) // Change from prevId
+});
+
+// ... existing code ...
+
+// And update the response handling:
+if (!res.ok) {
+  addMessage(`⚠️ Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data, null, 2)}`);
+} else {
+  addMessage(data.reply || '(no reply)');
+  if (data.threadId) threadId = data.threadId; // Change from responseId
+}
 
     function addMessage(text, who = 'bot') {
       const msg = document.createElement('div');
