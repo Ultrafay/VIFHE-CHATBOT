@@ -157,8 +157,8 @@
     const inputEl = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
 
-    // Keep conversation context across turns (Responses flow)
-    let prevId = null;
+    // Keep conversation context across turns (Assistant thread)
+    let threadId = null;
 
     // Send on Enter (Shift+Enter = newline)
     inputEl.addEventListener('keydown', (e) => {
@@ -219,7 +219,7 @@
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, prevId })
+          body: JSON.stringify({ message: text, threadId })
         });
         const data = await res.json();
         thinking.remove();
@@ -228,7 +228,9 @@
           addMessage(`⚠️ Error: ${typeof data.error === 'string' ? data.error : JSON.stringify(data, null, 2)}`);
         } else {
           addMessage(data.reply || '(no reply)');
-          if (data.responseId) prevId = data.responseId; // keep conversation state
+          // Accept either responseId or threadId from API
+          if (data.responseId) threadId = data.responseId;
+          else if (data.threadId) threadId = data.threadId;
         }
       } catch (err) {
         thinking.remove();
